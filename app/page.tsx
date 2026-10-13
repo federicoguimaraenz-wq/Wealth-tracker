@@ -192,6 +192,7 @@ export default function Home() {
         {/* OVERVIEW */}
         {tab === 0 && (
           <div className="flex flex-col gap-6">
+            {/* KPIs */}
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <KpiCard label="Patrimonio Neto" value={navFmt} accent="#10B981" />
               <KpiCard label="Activos Totales" value={tA >= 1e6 ? `€${(tA/1e6).toFixed(2)}M` : fmt(tA)} />
@@ -200,6 +201,7 @@ export default function Home() {
               <KpiCard label="LTV Global" value={fmtPct(ltv)} sub={`RE: ${fmtPct(ltvRE)}`} accent={ltv > 50 ? '#F59E0B' : '#E2E8F0'} />
             </div>
 
+            {/* Charts row */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div style={{background:'#1E293B',border:'1px solid #334155'}} className="rounded-xl p-5">
                 <div className="text-sm font-semibold text-slate-300 mb-4">Distribución por clase</div>
@@ -207,11 +209,12 @@ export default function Home() {
               </div>
 
               <div style={{background:'#1E293B',border:'1px solid #334155'}} className="rounded-xl p-5">
-                <div className="text-sm font-semibold text-slate-300 mb-4">Yield vs Objetivo</div>
+                <div className="text-sm font-semibold text-slate-300 mb-4">ROI vs Objetivo</div>
                 <div className="flex flex-col gap-2">
                   {assets.filter(a => a.is_active && a.tgt > 0).map(a => {
                     const valEur = toEur(a, fx)
-                    const actualYield = valEur > 0 ? (a.inc / valEur) * 100 : 0
+                    const costBase = a.cost > 0 ? a.cost : valEur
+                    const actualYield = costBase > 0 ? (a.inc / costBase) * 100 : 0
                     const ok = actualYield >= a.tgt
                     return (
                       <div key={a.id} className="flex items-center gap-3">
@@ -233,6 +236,7 @@ export default function Home() {
               </div>
             </div>
 
+            {/* Risk distribution */}
             <div style={{background:'#1E293B',border:'1px solid #334155'}} className="rounded-xl p-5">
               <div className="text-sm font-semibold text-slate-300 mb-4">Distribución por riesgo</div>
               <div className="flex flex-col gap-2">
@@ -278,7 +282,9 @@ export default function Home() {
                         <tr style={{borderBottom:'1px solid #334155'}}>
                           <th className="text-left px-4 py-2 text-xs text-slate-400 font-medium">Activo</th>
                           <th className="text-right px-4 py-2 text-xs text-slate-400 font-medium">Valor</th>
-                          <th className="text-right px-4 py-2 text-xs text-slate-400 font-medium">Yield</th>
+                          <th className="text-right px-4 py-2 text-xs text-slate-400 font-medium" title="Return on Investment: renta / coste adquisición">ROI</th>
+                          <th className="text-right px-4 py-2 text-xs text-slate-400 font-medium" title="Return on Equity: renta / (coste − deuda vinculada)">ROE</th>
+                          <th className="text-right px-4 py-2 text-xs text-slate-400 font-medium" title="Return on Value: renta / valor de mercado">ROV</th>
                           <th className="text-right px-4 py-2 text-xs text-slate-400 font-medium">Plusvalía</th>
                           <th className="text-right px-4 py-2 text-xs text-slate-400 font-medium">Riesgo</th>
                           <th className="px-4 py-2" />
@@ -287,8 +293,16 @@ export default function Home() {
                       <tbody>
                         {group.map(a => {
                           const valEur = toEur(a, fx)
-                          const yieldPct = valEur > 0 ? (a.inc / valEur) * 100 : 0
-                          const plusvalia = a.cost > 0 ? valEur - a.cost : null
+                          const cost = a.cost > 0 ? a.cost : null
+                          const linkedDebt = liabs
+                            .filter(l => l.linked === a.name)
+                            .reduce((s, l) => s + l.bal, 0)
+                          const roi = cost && a.inc > 0 ? (a.inc / cost) * 100 : null
+                          const equity = cost ? cost - linkedDebt : null
+                          const roe = equity && equity > 0 && a.inc > 0 ? (a.inc / equity) * 100 : null
+                          const rov = valEur > 0 && a.inc > 0 ? (a.inc / valEur) * 100 : null
+                          const plusvalia = cost ? valEur - cost : null
+                          const pctColor = (v: number) => v >= a.tgt ? '#10B981' : '#F59E0B'
                           return (
                             <tr key={a.id} style={{borderBottom:'1px solid #1E293B', opacity: a.is_active ? 1 : 0.45}}>
                               <td className="px-4 py-3">
@@ -301,9 +315,19 @@ export default function Home() {
                                   ? <><span className="text-slate-400 text-xs">${a.val.toLocaleString('es-ES')} </span>{fmt(valEur)}</>
                                   : fmt(valEur)}
                               </td>
-                              <td className="px-4 py-3 text-right">
-                                {a.inc > 0
-                                  ? <span style={{color: yieldPct >= a.tgt ? '#10B981' : '#F59E0B'}}>{yieldPct.toFixed(1)}%</span>
+                              <td className="px-4 py-3 text-right text-xs">
+                                {roi !== null
+                                  ? <span style={{color: pctColor(roi)}}>{roi.toFixed(1)}%</span>
+                                  : <span className="text-slate-600">—</span>}
+                              </td>
+                              <td className="px-4 py-3 text-right text-xs">
+                                {roe !== null
+                                  ? <span style={{color: pctColor(roe)}}>{roe.toFixed(1)}%</span>
+                                  : <span className="text-slate-600">—</span>}
+                              </td>
+                              <td className="px-4 py-3 text-right text-xs">
+                                {rov !== null
+                                  ? <span style={{color: pctColor(rov)}}>{rov.toFixed(1)}%</span>
                                   : <span className="text-slate-600">—</span>}
                               </td>
                               <td className="px-4 py-3 text-right text-xs">
@@ -393,7 +417,8 @@ export default function Home() {
               <h3 className="text-sm font-semibold text-white mb-2">Acceso</h3>
               <p className="text-xs text-slate-400 mb-3">
                 Para dar acceso a otra persona, tienen que ir a{' '}
-                <strong className="text-slate-300">wealth-tracker-dusky-rho.vercel.app/login</strong> y entrar con su email.
+                <strong className="text-slate-300">[tu-dominio]/login</strong> y entrar con su email.
+                Solo podrán ver datos (no editar) si quieres restringirlo — avísame y lo configuro.
               </p>
               <p className="text-xs text-slate-500">Sesión activa: {user?.email}</p>
             </div>
