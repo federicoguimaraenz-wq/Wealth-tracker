@@ -338,3 +338,4 @@ export default function Home() {
                   <div className="text-xs font-semibold uppercase tracking-wider mb-2"
                     style={{color: CLS_COLOR[cls]}}>{CLS_LABEL[cls]}</div>
                   <div style={{background:'#1E293B',border:'1px solid #334155'}} className="rounded-xl overflow-hidden">
+
