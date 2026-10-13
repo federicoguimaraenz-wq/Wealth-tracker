@@ -54,7 +54,6 @@ export default function Home() {
     ])
 
     if (!aData || aData.length === 0) {
-      // Seed with defaults
       const toInsert = DEFAULT_ASSETS.map(a => ({ ...a, user_id: userId }))
       const { data: inserted } = await supabase.from('assets').insert(toInsert).select()
       setAssets(inserted || [])
@@ -75,9 +74,11 @@ export default function Home() {
   async function saveAsset(form: Partial<Asset>) {
     if (!user) return
     if (editAsset?.id) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { id: _id, ...formWithoutId } = form as Asset
       const { data, error } = await supabase
         .from('assets')
-        .update({ ...form, user_id: user.id })
+        .update(formWithoutId)
         .eq('id', editAsset.id)
         .select()
         .single()
@@ -104,9 +105,11 @@ export default function Home() {
   async function saveLiab(form: Partial<Liability>) {
     if (!user) return
     if (editLiab?.id) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { id: _id, ...formWithoutId } = form as Liability
       const { data, error } = await supabase
         .from('liabilities')
-        .update({ ...form, user_id: user.id })
+        .update(formWithoutId)
         .eq('id', editLiab.id)
         .select()
         .single()
@@ -154,33 +157,33 @@ export default function Home() {
       {/* Header */}
       <header style={{background:'#1E293B', borderBottom:'1px solid #334155'}} className="sticky top-0 z-30">
         <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <span className="text-white font-bold text-lg">Wealth Tracker</span>
-          <span className="text-xs text-slate-500">|</span>
-          <span className="text-xs text-slate-400">FX EUR/USD: {fx}</span>
-        </div>
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-slate-500">{user?.email}</span>
-          <button className="btn-ghost text-xs px-3 py-1" onClick={signOut}>Salir</button>
-        </div>
+          <div className="flex items-center gap-3">
+            <span className="text-white font-bold text-lg">Wealth Tracker</span>
+            <span className="text-xs text-slate-500">|</span>
+            <span className="text-xs text-slate-400">FX EUR/USD: {fx}</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-slate-500">{user?.email}</span>
+            <button className="btn-ghost text-xs px-3 py-1" onClick={signOut}>Salir</button>
+          </div>
         </div>
       </header>
 
       {/* Tabs */}
       <div style={{borderBottom:'1px solid #334155'}}>
         <div className="max-w-6xl mx-auto px-6 flex">
-        {TABS.map((t, i) => (
-          <button key={i} onClick={() => setTab(i)}
-            className="px-4 py-3 text-sm font-medium"
-            style={{
-              color: tab === i ? '#3B82F6' : '#94A3B8',
-              borderBottom: tab === i ? '2px solid #3B82F6' : '2px solid transparent',
-              background: 'transparent',
-              borderRadius: 0,
-            }}>
-            {t}
-          </button>
-        ))}
+          {TABS.map((t, i) => (
+            <button key={i} onClick={() => setTab(i)}
+              className="px-4 py-3 text-sm font-medium"
+              style={{
+                color: tab === i ? '#3B82F6' : '#94A3B8',
+                borderBottom: tab === i ? '2px solid #3B82F6' : '2px solid transparent',
+                background: 'transparent',
+                borderRadius: 0,
+              }}>
+              {t}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -189,7 +192,6 @@ export default function Home() {
         {/* OVERVIEW */}
         {tab === 0 && (
           <div className="flex flex-col gap-6">
-            {/* KPIs */}
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <KpiCard label="Patrimonio Neto" value={navFmt} accent="#10B981" />
               <KpiCard label="Activos Totales" value={tA >= 1e6 ? `€${(tA/1e6).toFixed(2)}M` : fmt(tA)} />
@@ -198,7 +200,6 @@ export default function Home() {
               <KpiCard label="LTV Global" value={fmtPct(ltv)} sub={`RE: ${fmtPct(ltvRE)}`} accent={ltv > 50 ? '#F59E0B' : '#E2E8F0'} />
             </div>
 
-            {/* Charts row */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div style={{background:'#1E293B',border:'1px solid #334155'}} className="rounded-xl p-5">
                 <div className="text-sm font-semibold text-slate-300 mb-4">Distribución por clase</div>
@@ -232,7 +233,6 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Risk distribution */}
             <div style={{background:'#1E293B',border:'1px solid #334155'}} className="rounded-xl p-5">
               <div className="text-sm font-semibold text-slate-300 mb-4">Distribución por riesgo</div>
               <div className="flex flex-col gap-2">
@@ -393,8 +393,7 @@ export default function Home() {
               <h3 className="text-sm font-semibold text-white mb-2">Acceso</h3>
               <p className="text-xs text-slate-400 mb-3">
                 Para dar acceso a otra persona, tienen que ir a{' '}
-                <strong className="text-slate-300">[tu-dominio]/login</strong> y entrar con su email.
-                Solo podrán ver datos (no editar) si quieres restringirlo — avísame y lo configuro.
+                <strong className="text-slate-300">wealth-tracker-dusky-rho.vercel.app/login</strong> y entrar con su email.
               </p>
               <p className="text-xs text-slate-500">Sesión activa: {user?.email}</p>
             </div>
