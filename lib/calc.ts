@@ -36,7 +36,8 @@ export function calcPortfolio(assets: Asset[], liabs: Liability[], fx: number) {
   const ltvRE = reVal > 0 ? (reD / reVal) * 100 : 0
 
   const tInc = active.reduce((s, a) => s + (a.inc || 0), 0)
-  const yld = tA > 0 ? (tInc / tA) * 100 : 0
+  const tCost = active.reduce((s, a) => s + (a.cost > 0 ? a.cost : toEur(a, fx)), 0)
+  const yld = tCost > 0 ? (tInc / tCost) * 100 : 0
 
   const byClass: Record<string, number> = {}
   for (const a of active) {
