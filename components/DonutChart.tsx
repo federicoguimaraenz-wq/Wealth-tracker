@@ -32,22 +32,24 @@ export default function DonutChart({ slices, centerLabel, centerSub }: {
     : `€${Math.round(n).toLocaleString('es-ES')}`
 
   return (
-    <div className="flex items-center gap-6">
-      <svg width="220" height="220">
-        {paths.map((p, i) => (
-          <path
-            key={i} d={p.d} fill={p.color}
-            opacity={hovered === null || hovered === i ? 1 : 0.4}
-            stroke="#0F172A" strokeWidth="2"
-            onMouseEnter={() => setHovered(i)}
-            onMouseLeave={() => setHovered(null)}
-            style={{cursor:'pointer', transition:'opacity 0.15s'}}
-          />
-        ))}
-        <text x={cx} y={cy - 6} textAnchor="middle" fill="#E2E8F0" fontSize="15" fontWeight="700">{centerLabel}</text>
-        {centerSub && <text x={cx} y={cy + 14} textAnchor="middle" fill="#64748B" fontSize="11">{centerSub}</text>}
-      </svg>
-      <div className="flex flex-col gap-2">
+    <div className="flex flex-col sm:flex-row items-center gap-4">
+      <div className="w-full sm:w-auto flex-shrink-0" style={{maxWidth: 200}}>
+        <svg viewBox="0 0 220 220" width="100%" style={{display:'block'}}>
+          {paths.map((p, i) => (
+            <path
+              key={i} d={p.d} fill={p.color}
+              opacity={hovered === null || hovered === i ? 1 : 0.4}
+              stroke="#0F172A" strokeWidth="2"
+              onMouseEnter={() => setHovered(i)}
+              onMouseLeave={() => setHovered(null)}
+              style={{cursor:'pointer', transition:'opacity 0.15s'}}
+            />
+          ))}
+          <text x={cx} y={cy - 6} textAnchor="middle" fill="#E2E8F0" fontSize="15" fontWeight="700">{centerLabel}</text>
+          {centerSub && <text x={cx} y={cy + 14} textAnchor="middle" fill="#64748B" fontSize="11">{centerSub}</text>}
+        </svg>
+      </div>
+      <div className="flex flex-col gap-2 w-full">
         {slices.map((s, i) => (
           <div key={i} className="flex items-center gap-2 text-sm"
             onMouseEnter={() => setHovered(i)}
