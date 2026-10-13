@@ -20,7 +20,7 @@ function fmtPct(n: number) { return n.toFixed(1) + '%' }
 
 export default function Home() {
   const router = useRouter()
-  const [user, setUser] = useState<{ email?: string } | null>(null)
+  const [user, setUser] = useState<{ id: string; email?: string } | null>(null)
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState(0)
   const [fx, setFx] = useState(FX_DEFAULT)
@@ -36,8 +36,9 @@ export default function Home() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       if (!data.session) { router.push('/login'); return }
-      setUser(data.session.user)
-      loadData(data.session.user.id)
+      const u = { id: data.session.user.id, email: data.session.user.email }
+      setUser(u)
+      loadData(u.id)
     })
     const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
       if (!session) router.push('/login')
@@ -73,12 +74,22 @@ export default function Home() {
 
   async function saveAsset(form: Partial<Asset>) {
     if (!user) return
-    const userId = (user as { id?: string }).id || ''
     if (editAsset?.id) {
-      const { data } = await supabase.from('assets').update(form).eq('id', editAsset.id).select().single()
+      const { data, error } = await supabase
+        .from('assets')
+        .update({ ...form, user_id: user.id })
+        .eq('id', editAsset.id)
+        .select()
+        .single()
+      if (error) { console.error('Error updating asset:', error); return }
       if (data) setAssets(prev => prev.map(a => a.id === data.id ? data : a))
     } else {
-      const { data } = await supabase.from('assets').insert({ ...form, user_id: userId }).select().single()
+      const { data, error } = await supabase
+        .from('assets')
+        .insert({ ...form, user_id: user.id })
+        .select()
+        .single()
+      if (error) { console.error('Error inserting asset:', error); return }
       if (data) setAssets(prev => [...prev, data])
     }
     setEditAsset(undefined)
@@ -92,12 +103,22 @@ export default function Home() {
 
   async function saveLiab(form: Partial<Liability>) {
     if (!user) return
-    const userId = (user as { id?: string }).id || ''
     if (editLiab?.id) {
-      const { data } = await supabase.from('liabilities').update(form).eq('id', editLiab.id).select().single()
+      const { data, error } = await supabase
+        .from('liabilities')
+        .update({ ...form, user_id: user.id })
+        .eq('id', editLiab.id)
+        .select()
+        .single()
+      if (error) { console.error('Error updating liability:', error); return }
       if (data) setLiabs(prev => prev.map(l => l.id === data.id ? data : l))
     } else {
-      const { data } = await supabase.from('liabilities').insert({ ...form, user_id: userId }).select().single()
+      const { data, error } = await supabase
+        .from('liabilities')
+        .insert({ ...form, user_id: user.id })
+        .select()
+        .single()
+      if (error) { console.error('Error inserting liability:', error); return }
       if (data) setLiabs(prev => [...prev, data])
     }
     setEditLiab(undefined)
@@ -131,7 +152,8 @@ export default function Home() {
   return (
     <div className="min-h-screen" style={{background:'#0F172A'}}>
       {/* Header */}
-      <header style={{background:'#1E293B', borderBottom:'1px solid #334155'}} className="px-6 py-3 flex items-center justify-between sticky top-0 z-30">
+      <header style={{background:'#1E293B', borderBottom:'1px solid #334155'}} className="sticky top-0 z-30">
+        <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <span className="text-white font-bold text-lg">Wealth Tracker</span>
           <span className="text-xs text-slate-500">|</span>
@@ -141,10 +163,12 @@ export default function Home() {
           <span className="text-xs text-slate-500">{user?.email}</span>
           <button className="btn-ghost text-xs px-3 py-1" onClick={signOut}>Salir</button>
         </div>
+        </div>
       </header>
 
       {/* Tabs */}
-      <div style={{borderBottom:'1px solid #334155'}} className="flex px-6">
+      <div style={{borderBottom:'1px solid #334155'}}>
+        <div className="max-w-6xl mx-auto px-6 flex">
         {TABS.map((t, i) => (
           <button key={i} onClick={() => setTab(i)}
             className="px-4 py-3 text-sm font-medium"
@@ -157,6 +181,7 @@ export default function Home() {
             {t}
           </button>
         ))}
+        </div>
       </div>
 
       <main className="px-6 py-6 max-w-6xl mx-auto">
